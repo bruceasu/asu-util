@@ -2,7 +2,11 @@ package me.asu.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * @author Suk.
@@ -20,9 +24,6 @@ public class DateUtils {
      */
     public static final long WEEK = 7 * DAY;
 
-
-    /** The Default Timezone to be used */
-    private static final TimeZone TIMEZONE = TimeZone.getDefault();
 
     /** Create Date Formats */
     private static final String[] POSSIBLE_DATE_FORMATS = {
@@ -117,20 +118,131 @@ public class DateUtils {
         return result;
     }
 
-    private static int signPos(String strdate, String str) {
+    private static int signPos(String strdate, String str)
+    {
         return strdate.substring(strdate.length() - 5).indexOf(str);
     }
 
 
-    public static SimpleDateFormat[] createSimpleDataFormats(String[] formats) {
-		/* Create the dateformats */
+    public static SimpleDateFormat[] createSimpleDataFormats(String[] formats)
+    {
+        /* Create the dateformats */
         SimpleDateFormat[] dfsArr = new SimpleDateFormat[formats.length];
 
         for (int i = 0; i < formats.length; i++) {
             dfsArr[i] = new SimpleDateFormat(formats[i], Locale.getDefault());
-            dfsArr[i].setTimeZone(TIMEZONE);
         }
 
         return dfsArr;
+    }
+
+    public static Date now()
+    {
+        return new Date();
+    }
+
+    public static String now(String fmt)
+    {
+        if (fmt == null) {
+            fmt = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat(fmt);
+        return sdf.format(now());
+    }
+
+    public static Date today()
+    {
+        LocalDate now = LocalDate.now();
+        return asDate(now);
+    }
+
+    public static Date yesterday()
+    {
+        LocalDate now = LocalDate.now();
+        LocalDate yesterday = now.minusDays(1);
+        return asDate(yesterday);
+    }
+
+    public static Date tomorrow()
+    {
+        LocalDate now = LocalDate.now();
+        LocalDate tomorrow = now.plusDays(1);
+        return asDate(tomorrow);
+    }
+
+    // 本月第一天0:00时刻:
+    public static LocalDateTime firstDayOfMonth()
+    {
+
+        return LocalDate.now().withDayOfMonth(1).atStartOfDay();
+    }
+
+    //  本月最后1天:
+    public static LocalDate lastDayOfMonth()
+    {
+
+        return LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
+    }
+
+    // 本月第1个周X
+    public static LocalDate firstWeekday(DayOfWeek wd)
+    {
+        if (wd == null) {
+            wd = DayOfWeek.MONDAY;
+        }
+        return LocalDate.now().with(TemporalAdjusters.firstInMonth(wd));
+    }
+
+    // 下月第1天:
+    public static LocalDateTime nextMonthFirstDay()
+    {
+
+        return LocalDate.now().with(TemporalAdjusters.firstDayOfNextMonth()).atStartOfDay();
+    }
+
+
+    public static Date toDate(String iso8061Date)
+    {
+        DateTimeFormatter timeFormatter = DateTimeFormatter.ISO_DATE_TIME;
+
+        OffsetDateTime offsetDateTime = OffsetDateTime.parse(iso8061Date, timeFormatter);
+
+        Date date = Date.from(Instant.from(offsetDateTime));
+        return date;
+    }
+
+    public static String toIso8061String(Date date)
+    {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+        return sdf.format(date);
+    }
+
+    public static String toIso8061StringJdk8(Date date)
+    {
+        LocalDateTime localDateTime = asLocalDateTime(date);
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSXXX").format(localDateTime);
+    }
+
+    public static Date asDate(LocalDate localDate)
+    {
+        return Date.from(localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+    }
+
+    public static Date asDate(LocalDateTime localDateTime)
+    {
+        return Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant());
+    }
+
+    public static LocalDate asLocalDate(Date date)
+    {
+        return Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+    }
+
+    public static LocalDateTime asLocalDateTime(Date date)
+    {
+        return Instant.ofEpochMilli(date.getTime())
+                      .atZone(ZoneId.systemDefault())
+                      .toLocalDateTime();
     }
 }
